@@ -111,7 +111,9 @@ class TestCase:
             msg = "Expected %r to be in %r" % (x, y)
         assert x in y, msg
 
-    def assertIsInstance(self, x, y, msg=''):
+    def assertIsInstance(self, x, y, msg=None):
+        if not msg:
+            msg = '{} is not instance of {}'.format(x, y)
         assert isinstance(x, y), msg
 
     def assertRaises(self, exc, func=None, *args, **kwargs):
