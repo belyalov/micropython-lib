@@ -26,12 +26,12 @@ class TestCase:
     def fail(self, msg=''):
         assert False, msg
 
-    def assertEqual(self, x, y, msg=''):
+    def assertEqual(self, x, y, msg=None):
         if not msg:
             msg = "%r vs (expected) %r" % (x, y)
         assert x == y, msg
 
-    def assertNotEqual(self, x, y, msg=''):
+    def assertNotEqual(self, x, y, msg=None):
         if not msg:
             msg = "%r not expected to be equal %r" % (x, y)
         assert x != y, msg
@@ -57,7 +57,7 @@ class TestCase:
 
         assert False, msg
 
-    def assertNotAlmostEqual(self, x, y, places=None, msg='', delta=None):
+    def assertNotAlmostEqual(self, x, y, places=None, msg=None, delta=None):
         if delta is not None and places is not None:
             raise TypeError("specify delta or places not both")
 
@@ -76,37 +76,37 @@ class TestCase:
 
         assert False, msg
 
-    def assertIs(self, x, y, msg=''):
+    def assertIs(self, x, y, msg=None):
         if not msg:
             msg = "%r is not %r" % (x, y)
         assert x is y, msg
 
-    def assertIsNot(self, x, y, msg=''):
+    def assertIsNot(self, x, y, msg=None):
         if not msg:
             msg = "%r is %r" % (x, y)
         assert x is not y, msg
 
-    def assertIsNone(self, x, msg=''):
+    def assertIsNone(self, x, msg=None):
         if not msg:
             msg = "%r is not None" % x
         assert x is None, msg
 
-    def assertIsNotNone(self, x, msg=''):
+    def assertIsNotNone(self, x, msg=None):
         if not msg:
             msg = "%r is None" % x
         assert x is not None, msg
 
-    def assertTrue(self, x, msg=''):
+    def assertTrue(self, x, msg=None):
         if not msg:
             msg = "Expected %r to be True" % x
         assert x, msg
 
-    def assertFalse(self, x, msg=''):
+    def assertFalse(self, x, msg=None):
         if not msg:
             msg = "Expected %r to be False" % x
         assert not x, msg
 
-    def assertIn(self, x, y, msg=''):
+    def assertIn(self, x, y, msg=None):
         if not msg:
             msg = "Expected %r to be in %r" % (x, y)
         assert x in y, msg
@@ -119,7 +119,6 @@ class TestCase:
     def assertRaises(self, exc, func=None, *args, **kwargs):
         if func is None:
             return AssertRaisesContext(exc)
-
         try:
             func(*args, **kwargs)
             assert False, "%r not raised" % exc
@@ -212,7 +211,7 @@ def run_class(c, test_result):
             except Exception as e:
                 print(" ERROR\n")
                 test_result.errorsNum += 1
-                sys.print_exception(ae)
+                sys.print_exception(e)
                 print()
             finally:
                 tear_down()
@@ -232,4 +231,4 @@ def main(module="__main__"):
     runner = TestRunner()
     result = runner.run(suite)
     # Terminate with non zero return code in case of failures
-    sys.exit(result.failuresNum > 0)
+    sys.exit(result.failuresNum + result.errorsNum > 0)
