@@ -50,7 +50,7 @@ class TestCase:
         else:
             if places is None:
                 places = 7
-            if round(abs(y-x), places) == 0:
+            if round(abs(y - x), places) == 0:
                 return
             if not msg:
                 msg = '%r != %r within %r places' % (x, y, places)
@@ -69,7 +69,7 @@ class TestCase:
         else:
             if places is None:
                 places = 7
-            if not (x == y) and round(abs(y-x), places) != 0:
+            if not (x == y) and round(abs(y - x), places) != 0:
                 return
             if not msg:
                 msg = '%r == %r within %r places' % (x, y, places)
@@ -129,7 +129,6 @@ class TestCase:
             raise
 
 
-
 def skip(msg):
     def _decor(fun):
         # We just replace original fun with _inner
@@ -138,10 +137,12 @@ def skip(msg):
         return _inner
     return _decor
 
+
 def skipIf(cond, msg):
     if not cond:
         return lambda x: x
     return skip(msg)
+
 
 def skipUnless(cond, msg):
     if cond:
@@ -152,8 +153,10 @@ def skipUnless(cond, msg):
 class TestSuite:
     def __init__(self):
         self.tests = []
+
     def addTest(self, cls):
         self.tests.append(cls)
+
 
 class TestRunner:
     def run(self, suite):
@@ -172,6 +175,7 @@ class TestRunner:
 
         return res
 
+
 class TestResult:
     def __init__(self):
         self.errorsNum = 0
@@ -181,6 +185,7 @@ class TestResult:
 
     def wasSuccessful(self):
         return self.errorsNum == 0 and self.failuresNum == 0
+
 
 # TODO: Uncompliant
 def run_class(c, test_result):
