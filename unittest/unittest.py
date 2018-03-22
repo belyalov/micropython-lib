@@ -159,7 +159,7 @@ class TestRunner:
         for c in suite.tests:
             run_class(c, res)
 
-        print("Ran %d tests\n" % res.testsRun)
+        print("\nRan %d tests\n" % res.testsRun)
         if res.failuresNum > 0 or res.errorsNum > 0:
             print("FAILED (failures=%d, errors=%d)" % (res.failuresNum, res.errorsNum))
         else:
@@ -197,12 +197,16 @@ def run_class(c, test_result):
             except SkipTest as e:
                 print(" skipped:", e.args[0])
                 test_result.skippedNum += 1
-            except:
-                print(" FAIL")
+            except AssertionError as ae:
+                print(" FAIL\n")
                 test_result.failuresNum += 1
-                # Uncomment to investigate failure in detail
-                #raise
-                continue
+                sys.print_exception(ae)
+                print()
+            except Exception as e:
+                print(" ERROR\n")
+                test_result.errorsNum += 1
+                sys.print_exception(ae)
+                print()
             finally:
                 tear_down()
 
