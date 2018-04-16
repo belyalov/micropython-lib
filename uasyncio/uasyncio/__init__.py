@@ -36,7 +36,8 @@ class PollEventLoop(EventLoop):
         if DEBUG and __debug__:
             log.debug("remove_reader(%s)", sock)
         self.poller.unregister(sock)
-        del self.objmap[id(sock)]
+        if id(sock) in self.objmap:
+            del self.objmap[id(sock)]
 
     def add_writer(self, sock, cb, *args):
         if DEBUG and __debug__:
