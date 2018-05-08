@@ -99,27 +99,18 @@ class StreamReader:
         self.ios = ios
 
     def read(self, n=-1):
-        while True:
-            yield IORead(self.polls)
-            res = self.ios.read(n)
-            if res is not None:
-                break
-            # This should not happen for real sockets, but can easily
-            # happen for stream wrappers (ssl, websockets, etc.)
-            #log.warn("Empty read")
-        if not res:
+        yield IORead(self.polls)
+        res = self.ios.read(n)
+        if res is None or res == b'':
             yield IOReadDone(self.polls)
+            raise OSError(uerrno.ECONNRESET)
         return res
 
     def readexactly(self, n):
         buf = b""
         while n:
             yield IORead(self.polls)
-            res = self.ios.read(n)
-            assert res is not None
-            if not res:
-                yield IOReadDone(self.polls)
-                break
+            res = await self.read(n)
             buf += res
             n -= len(res)
         return buf
@@ -131,10 +122,9 @@ class StreamReader:
         while True:
             yield IORead(self.polls)
             res = self.ios.readline()
-            assert res is not None
-            if not res:
+            if res is None or res == b'':
                 yield IOReadDone(self.polls)
-                break
+                raise OSError(uerrno.ECONNRESET)
             buf += res
             if buf[-1] == 0x0a:
                 break
