@@ -259,7 +259,7 @@ sleep_ms = SleepMs()
 
 def cancel(coro):
     prev = coro.pend_throw(CancelledError())
-    if prev is False:
+    if prev is False or prev is None:
         _event_loop.call_soon(coro)
 
 
