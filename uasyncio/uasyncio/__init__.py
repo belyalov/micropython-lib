@@ -4,17 +4,6 @@ import usocket as _socket
 from uasyncio.core import *
 
 
-DEBUG = 0
-log = None
-
-def set_debug(val):
-    global DEBUG, log
-    DEBUG = val
-    if val:
-        import logging
-        log = logging.getLogger("uasyncio")
-
-
 class PollEventLoop(EventLoop):
 
     def __init__(self, runq_len=16, waitq_len=16):
@@ -23,8 +12,6 @@ class PollEventLoop(EventLoop):
         self.objmap = {}
 
     def add_reader(self, sock, cb, *args):
-        if DEBUG and __debug__:
-            log.debug("add_reader%s", (sock, cb, args))
         if args:
             self.poller.register(sock, select.POLLIN)
             self.objmap[id(sock)] = (cb, args)
@@ -33,15 +20,11 @@ class PollEventLoop(EventLoop):
             self.objmap[id(sock)] = cb
 
     def remove_reader(self, sock):
-        if DEBUG and __debug__:
-            log.debug("remove_reader(%s)", sock)
         self.poller.unregister(sock)
         if id(sock) in self.objmap:
             del self.objmap[id(sock)]
 
     def add_writer(self, sock, cb, *args):
-        if DEBUG and __debug__:
-            log.debug("add_writer%s", (sock, cb, args))
         if args:
             self.poller.register(sock, select.POLLOUT)
             self.objmap[id(sock)] = (cb, args)
@@ -50,8 +33,6 @@ class PollEventLoop(EventLoop):
             self.objmap[id(sock)] = cb
 
     def remove_writer(self, sock):
-        if DEBUG and __debug__:
-            log.debug("remove_writer(%s)", sock)
         try:
             self.poller.unregister(sock)
             self.objmap.pop(id(sock), None)
@@ -64,8 +45,6 @@ class PollEventLoop(EventLoop):
                 raise
 
     def wait(self, delay):
-        if DEBUG and __debug__:
-            log.debug("poll.wait(%d)", delay)
         # We need one-shot behavior (second arg of 1 to .poll())
         res = self.poller.ipoll(delay, 1)
         #log.debug("poll result: %s", res)
@@ -81,8 +60,6 @@ class PollEventLoop(EventLoop):
                     # unregister this sock, we'll busy-loop on it, so we
                     # as well can unregister it now "just in case".
                     self.remove_reader(sock)
-                if DEBUG and __debug__:
-                    log.debug("Calling IO callback: %r", cb)
                 if isinstance(cb, tuple):
                     cb[0](*cb[1])
                 else:
@@ -116,8 +93,6 @@ class StreamReader:
         return buf
 
     def readline(self):
-        if DEBUG and __debug__:
-            log.debug("StreamReader.readline()")
         buf = b""
         while True:
             yield IORead(self.polls)
@@ -128,16 +103,11 @@ class StreamReader:
             buf += res
             if buf[-1] == 0x0a:
                 break
-        if DEBUG and __debug__:
-            log.debug("StreamReader.readline(): %s", buf)
         return buf
 
     def aclose(self):
         yield IOReadDone(self.polls)
         self.ios.close()
-
-    def __repr__(self):
-        return "<StreamReader %r %r>" % (self.polls, self.ios)
 
 
 class StreamWriter:
@@ -154,26 +124,18 @@ class StreamWriter:
         # data), this method is a coroutine.
         if sz == -1:
             sz = len(buf) - off
-        if DEBUG and __debug__:
-            log.debug("StreamWriter.awrite(): spooling %d bytes", sz)
         while True:
             res = self.s.write(buf, off, sz)
             # If we spooled everything, return immediately
             if res == sz:
-                if DEBUG and __debug__:
-                    log.debug("StreamWriter.awrite(): completed spooling %d bytes", res)
                 return
             if res is None:
                 res = 0
-            if DEBUG and __debug__:
-                log.debug("StreamWriter.awrite(): spooled partial %d bytes", res)
             assert res < sz
             off += res
             sz -= res
             yield IOWrite(self.s)
             #assert s2.fileno() == self.s.fileno()
-            if DEBUG and __debug__:
-                log.debug("StreamWriter.awrite(): can write more")
 
     # Write piecewise content from iterable (usually, a generator)
     def awriteiter(self, iterable):
@@ -187,13 +149,8 @@ class StreamWriter:
     def get_extra_info(self, name, default=None):
         return self.extra.get(name, default)
 
-    def __repr__(self):
-        return "<StreamWriter %r>" % self.s
-
 
 def open_connection(host, port, ssl=False):
-    if DEBUG and __debug__:
-        log.debug("open_connection(%s, %s)", host, port)
     ai = _socket.getaddrinfo(host, port, 0, _socket.SOCK_STREAM)
     ai = ai[0]
     s = _socket.socket(ai[0], ai[1], ai[2])
@@ -203,15 +160,10 @@ def open_connection(host, port, ssl=False):
     except OSError as e:
         if e.args[0] != uerrno.EINPROGRESS:
             raise
-    if DEBUG and __debug__:
-        log.debug("open_connection: After connect")
     yield IOWrite(s)
 #    if __debug__:
 #        assert s2.fileno() == s.fileno()
-    if DEBUG and __debug__:
-        log.debug("open_connection: After iowait: %s", s)
     if ssl:
-        print("Warning: uasyncio SSL support is alpha")
         import ussl
         s.setblocking(True)
         s2 = ussl.wrap_socket(s)
@@ -221,8 +173,6 @@ def open_connection(host, port, ssl=False):
 
 
 def start_server(client_coro, host, port, backlog=10):
-    if DEBUG and __debug__:
-        log.debug("start_server(%s, %s)", host, port)
     ai = _socket.getaddrinfo(host, port, 0, _socket.SOCK_STREAM)
     ai = ai[0]
     s = _socket.socket(ai[0], ai[1], ai[2])
@@ -232,15 +182,9 @@ def start_server(client_coro, host, port, backlog=10):
     s.bind(ai[-1])
     s.listen(backlog)
     while True:
-        if DEBUG and __debug__:
-            log.debug("start_server: Before accept")
         yield IORead(s)
-        if DEBUG and __debug__:
-            log.debug("start_server: After iowait")
         s2, client_addr = s.accept()
         s2.setblocking(False)
-        if DEBUG and __debug__:
-            log.debug("start_server: After accept: %s", s2)
         extra = {"peername": client_addr}
         yield client_coro(StreamReader(s2), StreamWriter(s2, extra))
 

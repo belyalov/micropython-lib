@@ -28,7 +28,7 @@ class Logger:
         l = _level_dict.get(level)
         if l is not None:
             return l
-        return "LVL%s" % level
+        return ""
 
     def setLevel(self, level):
         self.level = level
@@ -88,7 +88,3 @@ def basicConfig(level=INFO, filename=None, stream=None, format=None):
     _level = level
     if stream:
         _stream = stream
-    if filename is not None:
-        print("logging.basicConfig: filename arg is not supported")
-    if format is not None:
-        print("logging.basicConfig: format arg is not supported")
